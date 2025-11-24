@@ -1,0 +1,42 @@
+kubectl delete configmap spring-boot-config-poc -n default
+kubectl delete deployment spring-boot-config-poc
+
+# Delete all resources created by the YAML file
+kubectl delete deployment logapp
+kubectl delete service logapp-service
+kubectl delete configmap logapp-config
+kubectl delete rolebinding logapp-watch-configmaps
+kubectl delete role logapp-configmap-watcher
+kubectl delete serviceaccount logapp-sa
+
+
+kubectl apply -f configmap.yaml
+kubectl apply -f deployment.yaml
+kubectl apply -f configmap-rbac.yaml
+kubectl logs -f $(kubectl get pods -l app=logapp -o jsonpath="{.items[-1].metadata.name}")
+kubectl exec -it $(kubectl get pods -l app=logapp -o jsonpath="{.items[-1].metadata.name}") -- sh
+
+docker rmi logapp
+mvn clean install
+docker build -t logapp:latest .
+kubectl apply -f logapp-k8s.yaml
+
+# Verify resources
+kubectl get all,cm,sa,role,rolebinding -l app=logapp
+
+kubectl auth can-i watch configmaps --as=system:serviceaccount:default:logapp-sa
+
+
+kubectl edit configmap logapp-config
+
+kubectl get pods -o wide
+cat logging.level.com.kailas.package1
+#delete
+kubectl delete deployment dynamicloggingapp
+docker rmi dynamicloggingapp
+
+
+kubectl get configmap dynamicloggingapp -n default -o yaml
+
+#view
+kubectl logs -f $(kubectl get pods -l app=dynamicloggingapp -o jsonpath="{.items[-1].metadata.name}")

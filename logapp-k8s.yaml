@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logapp-config
+  namespace: default
+data:
+  app.message: "Hello from Kubernetes"
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: logapp-sa
+  namespace: default
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: logapp-role
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps", "services", "endpoints", "pods"]
+    verbs: ["get", "watch", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: logapp-rb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: logapp-role
+subjects:
+  - kind: ServiceAccount
+    name: logapp-sa
+    namespace: default
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logapp
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: logapp
+  template:
+    metadata:
+      labels:
+        app: logapp
+    spec:
+      serviceAccountName: logapp-sa
+      containers:
+        - name: logapp
+          image: logapp:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: default
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: logapp
+  namespace: default
+spec:
+  selector:
+    app: logapp
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
