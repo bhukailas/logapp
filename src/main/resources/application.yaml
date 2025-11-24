@@ -1,0 +1,47 @@
+#spring:
+#  application:
+#    name: logapp
+#
+#  cloud:
+#    kubernetes:
+#      config:
+#        enabled: true
+#        name: logapp-config
+#        namespace: default
+#        enable-api: true
+#        paths-from-config-map: true
+#        sources:
+#          - name: logapp-config
+#      reload:
+#        enabled: true
+#        mode: event
+#        strategy: refresh
+#
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include: health, info, refresh
+spring:
+  application:
+    name: logapp
+
+  config:
+    import: "kubernetes:"   # ← THE KEY THAT TRIGGERS CONFIGMAP IMPORT
+
+  cloud:
+    kubernetes:
+      config:
+        namespace: default
+        sources:
+          - name: logapp-config
+      reload:
+        enabled: true
+        mode: event
+        strategy: refresh
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, refresh
